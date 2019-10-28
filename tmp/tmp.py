@@ -1,5 +1,66 @@
 #coding=utf-8
 
+
+'''
+lora_buf = []
+
+lora_buf.append(0x1)
+lora_buf.append(0x2)
+
+for i in lora_buf:
+    print('%#x'%i)
+'''
+
+
+
+dev_arr = []
+
+
+dict = {}
+dict["id"] = 1
+dict["state"] = "on"
+dict["temperature"] = "21.6"
+dict["humidity"] = "50"
+dev_arr.append(dict)
+
+
+dict = {}
+dict["id"] = 2
+dict["state"] = "off"
+dict["temperature"] = "27.4"
+dict["humidity"] = "80"
+dev_arr.append(dict)
+
+print(dev_arr[-1])
+
+for i in dev_arr:
+    print(i)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
 from Queue import *
 from threading import Thread
 import time
@@ -40,3 +101,4 @@ print('开始点名~')
 teacher.call('小明')
 time.sleep(1)
 teacher.call('小亮')
+'''
