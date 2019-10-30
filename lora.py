@@ -64,31 +64,8 @@ def analyse_lora_frame(arr):
         send_to_client(None, json.dumps(dict, indent=1))
     else:
         # 发给指定客户端
-        # send_to_client(fd, json.dumps(dict, indent=1))
-        send_to_client(None, json.dumps(dict, indent=1))
+        send_to_client(fd, json.dumps(dict, indent=1))
 
-'''
-    dict = {}
-    dict["id"] = id
-    if cmd == 0x2:
-        dict["cmd"] = "GET STATE RESPONSE"
-        dict["state"] = state;
-        send_to_client(fd, json.dumps(dict, indent=1))
-    elif cmd == 0x4:
-        dict["cmd"] = "SET STATE RESPONSE"
-        dict["state"] = state;
-        print(dict)
-        send_to_client(None, json.dumps(dict, indent=1))
-    elif cmd == 0x6:
-        dict["cmd"] = "GET SENSOR RESPONSE"
-        dict["humidity"] = humidity
-        dict["temperature"] = temperature
-        send_to_client(fd, json.dumps(dict, indent=1))
-    elif cmd == 0x7:
-        dict["cmd"] = "STATE CHANGE REQUEST"
-        dict["state"] = state
-        send_to_client(None, json.dumps(dict, indent=1))
-'''
 
 def send_to_client(fd, buf):
     # fd=None表示向所有tcp客户端发送数据
@@ -104,8 +81,8 @@ def send_to_client(fd, buf):
 def connect_to_server():
     sock = socket(AF_INET, SOCK_STREAM)
     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    # sock.connect(("192.168.0.43", 54300))
-    sock.connect(("127.0.0.1", 54300))
+    sock.connect(("192.168.0.43", 54301))
+    # sock.connect(("127.0.0.1", 54301))
     print("lora server connected")
     # 设置接收和发送超时200ms
     sock.settimeout(0.2)
