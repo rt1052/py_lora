@@ -7,7 +7,7 @@ import struct
 # 本地调用
 from global_var import *
 
-
+# 接收到lora数据包并解析
 def analyse_lora_frame(arr):
     """
     按照协议解析lora数据帧
@@ -59,7 +59,7 @@ def analyse_lora_frame(arr):
     建立json数据帧
     """
     dict = {"type": "dev info", "dev": dev}
-    if (cmd == 0x4 or cmd == 0x7):
+    if (cmd == 0x2 or cmd == 0x7):
         # 发给所有客户端
         send_to_client(None, json.dumps(dict, indent=1))
     else:
@@ -87,6 +87,40 @@ def connect_to_server():
     # 设置接收和发送超时200ms
     sock.settimeout(0.2)
     return sock
+
+
+# 构建lora数据帧
+def lora_frame_create(fd, id, cmd, state):
+    arr = []
+    # 帧头
+    arr.append(0x42)
+    # 帧长
+    arr.append(0x06)
+    arr.append(fd)
+    arr.append(id)
+    # 命令
+    if cmd == "SET STATE REQUEST":
+        arr.append(0x1)
+    elif cmd == "GET STATE REQUEST":
+        arr.append(0x3)
+    elif cmd == "GET SENSOR REQUEST":
+        arr.append(0x5)
+    # 数据
+    if state == "on":
+        arr.append(0)
+    elif state == "off":
+        arr.append(1)
+    elif state == None:
+        arr.append(0)
+
+    # 校验
+    ck = 0
+    for i in arr:
+        ck += i
+    arr.append(ck)
+    # 加入发送队列
+    g_var.lora_queue.put(arr)
+
 
 def thread_lora():
     cli_sock = connect_to_server()

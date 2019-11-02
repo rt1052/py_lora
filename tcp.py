@@ -10,11 +10,12 @@ import json
 
 # 本地调用
 from global_var import *
+from lora import *
+
 
 
 # {"state": "on", "cmd": "SET STATE REQUEST", "id": 1}
 # {cmd": "GET ALL STATE"}
-
 def analyse_json_frame(sock, fd, buf):
     dict = json.loads(buf)
 
@@ -26,35 +27,7 @@ def analyse_json_frame(sock, fd, buf):
         # 通过tcp发送
         sock.send(json.dumps(tmp, indent=1))
     else:
-        state = dict["state"]
-        arr = []
-        # 帧头
-        arr.append(0x42)
-        # 帧长
-        arr.append(0x06)
-        arr.append(fd)
-        arr.append(dict["id"])
-
-        if cmd == "SET STATE REQUEST":
-            arr.append(0x1)
-        elif cmd == "GET STATE REQUEST":
-            arr.append(0x3)
-        elif cmd == "GET SENSOR REQUEST":
-            arr.append(0x5)
-
-        if state == "on":
-            arr.append(0)
-        elif state == "off":
-            arr.append(1)
-            
-        # 添加校验和
-        ck = 0
-        for i in arr:
-            ck += i
-        arr.append(ck)
-
-        print(arr)  
-        g_var.lora_queue.put(arr)
+        lora_frame_create(fd, dict["id"], dict["cmd"], dict["state"])  
 
 
 def tcp_client(sock, info):
@@ -97,9 +70,9 @@ def tcp_client(sock, info):
 
 def thread_tcp():
     srv_sock = socket(AF_INET, SOCK_STREAM)
-    # 设置ip和端口，''表示本地ip
     srv_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    srv_sock.bind(('', 54300))
+    # 设置ip和端口，''表示本地ip
+    srv_sock.bind(('', 54200))
     srv_sock.listen(5)
 
     while True:

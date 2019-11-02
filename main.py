@@ -7,6 +7,7 @@ from threading import *
 from global_var import *
 from tcp import *
 from lora import *
+from alarm import *
 
 
 def thread_user():
@@ -28,6 +29,29 @@ def thread_user():
             print('unknow cmd')
 
 
+# 每十分钟查询设备
+def thread_polling():
+    # 保存新连接的信息
+    info = {}
+    info['fd'] = g_var.polling_fd
+    info['host'] = "polling"
+    info['queue'] = Queue()
+    g_var.cli_arr.append(info)
+
+    while True:
+        for i in range(1, 5):
+            print(i, "request")
+            lora_frame_create(g_var.polling_fd, i, "GET STATE REQUEST", None)
+            lora_frame_create(g_var.polling_fd, i, "GET SENSOR REQUEST", None)
+        sleep(10*60)          
+
+    # 将传感器数据存入数据库
+    # 建立传感器表
+    #dbc.execute('create table dht11(Time VARCHAR(12), humi REAL, temp REAL);')
+    #dbc.execute('insert into dht11 values(datetime(\'now\', \'localtime\'), 50, 28.6);')
+
+
+
 if __name__ == "__main__": 
 
     g_var.lora_queue = Queue();
@@ -37,8 +61,8 @@ if __name__ == "__main__":
     usr_thread.start()
 
     # 闹钟线程
-    # alarm_thread = Thread(target = thread_alarm)
-    # alarm_thread.start()
+    alarm_thread = Thread(target = thread_alarm)
+    alarm_thread.start()
 
     # 模拟lora收发
     lora_thread = Thread(target = thread_lora)
@@ -47,3 +71,7 @@ if __name__ == "__main__":
     # tcp线程      
     tcp_thread = Thread(target = thread_tcp)
     tcp_thread.start() 
+
+    # 轮询线程
+    polling_thread = Thread(target = thread_polling)
+    polling_thread.start()
