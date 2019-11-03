@@ -3,6 +3,8 @@
 from sqlite3 import *
 from time import *
 from datetime import *
+import logging
+import logging.handlers
 
 # 本地调用
 from global_var import *
@@ -24,7 +26,6 @@ def alarm_read_db(id):
     arr = []
     # 将闹钟信息存入数组
     for row in data:
-        # print row[0], row[1], row[2], row[3]
         info = {}
         alarm = datetime.strptime('16:47:00', '%H:%M:%S')
         # 将时间转换成datetime格式
@@ -52,19 +53,22 @@ def alarm_write_db(id, time, state):
 
     dbc.close()
     db.commit()
-    db.close()    
+    db.close()
+
+
+# 删除闹钟
+def alarm_delete(id, time):
+    pass
 
 
 def alarm_test():
     alarm_write_db(3, "22:00:00", "on")
     alarm_write_db(3, "08:00:00", "off")
-    alarm_write_db(2, "12:30:00", "on")
 
 
 def thread_alarm():
-    alarm_test()
+    # alarm_test()
     g_var.alarm_arr = alarm_read_db(None)
-    print(g_var.alarm_arr)
     # 闹钟超时时间
     delta = timedelta(minutes = 1)
     zero = datetime.strptime("00:00:00", "%H:%M:%S")
@@ -84,10 +88,25 @@ def thread_alarm():
 
         # 每天00:00重新从数据库读取闹钟
         if ((now > zero) and (now - zero) < delta):
-            print("zero")
+            logging("alarm reset")
             g_var.alarm_arr = alarm_read_db(None)
             # 跳过一分钟
             sleep(60)
+
+        # 接收lora数据
+        while not queue.empty():
+            data = queue.get()
+            dict = json.loads(data)
+            dev = dict["dev"]
+            # 删除对应的闹钟
+            for i in g_var.alarm_arr:
+                # 检查id和状态
+                if (dev["id"] == i["id"] and dev["state"] == i["state"]):
+                    # 检查时间
+                    if (now > alarm and (now-alarm) < delta):
+                        g_var.alarm_arr.remove(i)
+                        logging.info("alarm get: %s", i)
+                        break
 
         # 响应闹钟事件
         for i in g_var.alarm_arr:
@@ -95,31 +114,19 @@ def thread_alarm():
 
             if now < alarm:
                 pass
-                # print alarm - now 
             elif (now-alarm) < delta:
-                print("send", i)
+                logging.info("alarm post: %s", i)
                 # 发送lora数据
                 lora_frame_create(g_var.alarm_fd, i["id"], "SET STATE REQUEST", i["state"])
             else:
-                print("del", i)
+                logging.info("alarm timeout: %s", i)
                 # 超时则删除闹钟
                 g_var.alarm_arr.remove(i)
 
         # 延时等待响应
         sleep(10)
 
-        # 接收lora数据
-        while not queue.empty():
-            data = queue.get()
-            dict = json.loads(data)
-            dev = dict["dev"]
-            print("alarm", dev)
-            # 删除对应的闹钟
-            for i in g_var.alarm_arr:
-                # id和状态符合，以后再添加时间
-                if (dev["id"] == i["id"] and dev["state"] == i["state"]):
-                    g_var.alarm_arr.remove(i)
-                    break
+
 
 
         # 响应客户端的闹钟设置、查询请求

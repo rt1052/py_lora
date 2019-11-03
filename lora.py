@@ -3,6 +3,8 @@
 from socket import *
 import json
 import struct
+import logging
+import logging.handlers
 
 # 本地调用
 from global_var import *
@@ -83,7 +85,7 @@ def connect_to_server():
     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     sock.connect(("192.168.0.43", 54301))
     # sock.connect(("127.0.0.1", 54301))
-    print("lora server connected")
+    logging.info("lora server connected")
     # 设置接收和发送超时200ms
     sock.settimeout(0.2)
     return sock
@@ -134,9 +136,10 @@ def thread_lora():
             if buf:
                 # 将字符串转化为16进制数组
                 arr = struct.unpack('B'*len(buf), buf) 
+                logging.debug("lora recv: %s", arr)
                 analyse_lora_frame(arr)
             elif buf == b"":
-                print("lora server disconnect[1]")
+                logging.info("lora server disconnect[1]")
                 cli_sock.close()
                 cli_sock = connect_to_server()  
 
@@ -144,7 +147,7 @@ def thread_lora():
             pass    
 
         except socket.error:
-            print("lora server disconnected[2]")
+            logging.info("lora server disconnect[2]")
             cli_sock.close()
             cli_sock = connect_to_server()          
 
@@ -153,6 +156,7 @@ def thread_lora():
         """
         if not g_var.lora_queue.empty():
             buf = g_var.lora_queue.get()
+            logging.debug("lora send: %s", buf)
             # 将数组转换成字符串
             tmp = struct.pack('B'*len(buf), *buf)
             cli_sock.send(tmp)

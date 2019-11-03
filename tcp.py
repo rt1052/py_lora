@@ -7,6 +7,8 @@ from Queue import *
 from time import *
 from datetime import *
 import json
+import logging
+import logging.handlers
 
 # 本地调用
 from global_var import *
@@ -31,7 +33,7 @@ def analyse_json_frame(sock, fd, buf):
 
 
 def tcp_client(sock, info):
-    print(sock, 'connected')
+    logging.info("%s connected", info["host"])
     fd = info['fd']
     queue = info['queue']
     while True:
@@ -40,7 +42,7 @@ def tcp_client(sock, info):
             buf = sock.recv(1024)
             # 连接已断开
             if buf == b"":
-                print(sock, 'disconnected[1]')
+                logging.info("%s disconnected[1]", info["host"])
                 # 从客户端队列中删除
                 for i in g_var.cli_arr:
                     if i['fd'] == fd:
@@ -56,7 +58,7 @@ def tcp_client(sock, info):
             pass
 
         except socket.error:
-            print(sock, 'disconnected[2]')
+            logging.info("%s disconnected[2]", info["host"])
             # 从客户端队列中删除
             for i in g_var.cli_arr:
                 if i['fd'] == fd:

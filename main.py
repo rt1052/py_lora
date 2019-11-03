@@ -2,6 +2,9 @@
 
 from tcp import *
 from threading import *
+import logging
+import logging.handlers
+
 
 # 本地调用
 from global_var import *
@@ -39,8 +42,8 @@ def thread_polling():
     g_var.cli_arr.append(info)
 
     while True:
+        logging.info("polling")
         for i in range(1, 5):
-            print(i, "request")
             lora_frame_create(g_var.polling_fd, i, "GET STATE REQUEST", None)
             lora_frame_create(g_var.polling_fd, i, "GET SENSOR REQUEST", None)
         sleep(10*60)          
@@ -51,10 +54,31 @@ def thread_polling():
     #dbc.execute('insert into dht11 values(datetime(\'now\', \'localtime\'), 50, 28.6);')
 
 
+def log_init():
+
+    logging.basicConfig()
+
+    # when表示间隔单位，设成MIDNIGHT在零点刷新
+    # interval表示时间间隔
+    # 日志文件超过backupCount就会删除最早的日志，设成0就不会删除
+    fileshandle = logging.handlers.TimedRotatingFileHandler("/var/log/lora/hc_server", when='MIDNIGHT', interval=1, backupCount=0)
+    # 日志文件后缀
+    fileshandle.suffix = "%Y-%m-%d"
+    # 输出级别
+    fileshandle.setLevel(logging.DEBUG)
+    # 如果没有下面这句，前面设置的输出级别不会生效
+    logging.root.setLevel(logging.NOTSET)
+    # 日志内容和时间格式
+    formatter = logging.Formatter("%(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S")
+    fileshandle.setFormatter(formatter)
+    # 添加句柄
+    logging.getLogger('').addHandler(fileshandle)
+
 
 if __name__ == "__main__": 
 
-    g_var.lora_queue = Queue();
+    log_init()
+    logging.info("start")
 
     # 用户输入线程
     usr_thread = Thread(target = thread_user)
