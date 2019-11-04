@@ -88,7 +88,7 @@ def thread_alarm():
 
         # 每天00:00重新从数据库读取闹钟
         if ((now > zero) and (now - zero) < delta):
-            logging("alarm reset")
+            logging.info("alarm reset")
             g_var.alarm_arr = alarm_read_db(None)
             # 跳过一分钟
             sleep(60)
@@ -123,10 +123,6 @@ def thread_alarm():
                 # 超时则删除闹钟
                 g_var.alarm_arr.remove(i)
 
-        # 延时等待响应
         sleep(10)
-
-
-
 
         # 响应客户端的闹钟设置、查询请求

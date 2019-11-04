@@ -46,7 +46,7 @@ def thread_polling():
         for i in range(1, 5):
             lora_frame_create(g_var.polling_fd, i, "GET STATE REQUEST", None)
             lora_frame_create(g_var.polling_fd, i, "GET SENSOR REQUEST", None)
-        sleep(10*60)          
+        sleep(30*60)          
 
     # 将传感器数据存入数据库
     # 建立传感器表

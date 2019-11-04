@@ -1,14 +1,17 @@
 #coding=utf-8
 
-from socket import *
 from threading import *
 from sqlite3 import *
 from Queue import *
 from time import *
 from datetime import *
+import socket
 import json
 import logging
 import logging.handlers
+
+from socket import error as socketError
+import errno
 
 # 本地调用
 from global_var import *
@@ -57,17 +60,20 @@ def tcp_client(sock, info):
         except timeout as e:
             pass
 
-        except socket.error:
-            logging.info("%s disconnected[2]", info["host"])
-            # 从客户端队列中删除
-            for i in g_var.cli_arr:
-                if i['fd'] == fd:
-                    g_var.cli_arr.remove(i)            
-            sock.close()
+        except socketError as e:
+            if e.errno != errno.ECONNRESET:
+                logging.info("%s disconnected[2]", info["host"])
+                # 从客户端队列中删除
+                for i in g_var.cli_arr:
+                    if i['fd'] == fd:
+                        g_var.cli_arr.remove(i)            
+                sock.close()                
+            else:
+                logging.error("%s socket error", info["host"])           
 
         # 接收lora数据
         if not queue.empty():
-            sock.send(queue.get())
+            res = sock.send(queue.get())
 
 
 def thread_tcp():

@@ -1,43 +1,84 @@
 #coding=utf-8
 
+import socket
+from threading import *
+from sqlite3 import *
+from Queue import *
+from time import *
+from datetime import *
+import json
+import logging
+import logging.handlers
 
-import logging, logging.handlers
-import time
-
-''' TimedRotatingFileHandler构造函数声明 class logging.handlers.TimedRotatingFileHandler(filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False, atTime=None) filename 日志文件名前缀 when 日志名变更时间单位 'S' Seconds 'M' Minutes 'H' Hours 'D' Days 'W0'-'W6' Weekday (0=Monday) 'midnight' Roll over at midnight interval 间隔时间，是指等待N个when单位的时间后，自动重建文件 backupCount 保留日志最大文件数，超过限制，删除最先创建的文件；默认值0，表示不限制。 delay 延迟文件创建，直到第一次调用emit()方法创建日志文件 atTime 在指定的时间（datetime.time格式）创建日志文件。 '''
-
-
-
-
-
-
-def log_init():
-
-    logging.basicConfig()
-
-    # when表示间隔单位，设成MIDNIGHT在零点刷新
-    # interval表示时间间隔
-    # 日志文件超过backupCount就会删除最早的日志，设成0就不会删除
-    fileshandle = logging.handlers.TimedRotatingFileHandler("log/hc_server", when='MIDNIGHT', interval=1, backupCount=0)
-    # 日志文件后缀
-    fileshandle.suffix = "%Y-%m-%d"
-    # 输出级别
-    fileshandle.setLevel(logging.DEBUG)
-    # 日志内容和时间格式
-    formatter = logging.Formatter("%(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S")
-    fileshandle.setFormatter(formatter)
-    # 添加句柄
-    logging.getLogger('').addHandler(fileshandle)
+# 本地调用
+from global_var import *
+from lora import *
 
 
-if __name__ == '__main__':
-    log_init()
+def tcp_client(sock, info):
+    print("%s connected", info["host"])
+    fd = info['fd']
+    queue = info['queue']
+    while True:
+        try:
+            # 接收tcp数据
+            buf = sock.recv(1024)
+            # 连接已断开
+            if buf == b"":
+                print("%s disconnected[1]", info["host"])
+                # 从客户端队列中删除
+                for i in g_var.cli_arr:
+                    if i['fd'] == fd:
+                        g_var.cli_arr.remove(i)
+                sock.close()
+                break
+            # 正常接收数据
+            else:
+                # 添加到lora消息队列
+                pass
 
-    arr = []
-    arr.append(0x1)
-    arr.append(0x2)
+        except timeout as e:
+            pass
+
+        except socket.error:
+            print("%s disconnected[2]", info["host"])
+            # 从客户端队列中删除
+            for i in g_var.cli_arr:
+                if i['fd'] == fd:
+                    g_var.cli_arr.remove(i)            
+            sock.close()
+
+        res = sock.send("hello")
+        print(res)
+        sleep(1)
 
 
-    dict = {"dev": arr}
 
-    logging.warning("test %s", dict)
+def thread_tcp():
+    srv_sock = socket(AF_INET, SOCK_STREAM)
+    srv_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    # 设置ip和端口，''表示本地ip
+    srv_sock.bind(('', 54200))
+    srv_sock.listen(5)
+
+    while True:
+        cli_sock, cli_addr = srv_sock.accept()
+        # 设置接收和发送超时200ms
+        cli_sock.settimeout(0.2)
+
+        # 保存新连接的信息
+        info = {}
+        info['fd'] = cli_sock.fileno()
+        info['host'] = cli_addr
+        info['queue'] = Queue()
+        g_var.cli_arr.append(info)
+
+        # 为连接创建线程，因为只有一个arg参数，所以要以逗号结尾
+        cli_thread = Thread(target = tcp_client,
+                            args = (cli_sock, info))
+        cli_thread.start()
+
+    srv_sock.close()
+
+
+thread_tcp()
