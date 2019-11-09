@@ -22,10 +22,8 @@ def analyse_lora_frame(arr):
 
     # 如果是传感器信息
     if cmd == 0x06:
-        # 测试用
-        return None
         humidity = arr[5]
-        temperature = arr[7] + arr[8]/10
+        temperature = arr[7] + arr[8] / 10.0
     else:
         if arr[5] == 0x0:
             state = "on"
@@ -40,7 +38,7 @@ def analyse_lora_frame(arr):
         # 根据id查找设备
         if i["id"] == id:
             dev = i
-    # 设备不存在
+    # 设备不存在则添加设备
     if dev == None:
         dict = {}
         g_var.dev_arr.append(dict)
@@ -48,8 +46,8 @@ def analyse_lora_frame(arr):
         dev = g_var.dev_arr[-1]
         dev["id"] = id
         dev["state"] = None
-        dev["humidity"] = None
-        dev["temperature"] = None
+        dev["humidity"] = 0
+        dev["temperature"] = 0.0
 
     if state != None:
         dev["state"] = state

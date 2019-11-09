@@ -67,7 +67,8 @@ def tcp_client(sock, info):
                 for i in g_var.cli_arr:
                     if i['fd'] == fd:
                         g_var.cli_arr.remove(i)            
-                sock.close()                
+                sock.close()
+                break                
             else:
                 logging.error("%s socket error", info["host"])           
 
