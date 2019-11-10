@@ -12,7 +12,6 @@
 #include "sx1276.h"
 
 #include "main.h"
-#include "tcp.h"
 #include "lora.h"
 
  
@@ -20,7 +19,7 @@ int fd_tcp_cli;
 
 void *thread_lora(void *arg)
 {
-    uint8_t buf[1024];
+    uint8_t buf[256];
     uint16_t len;
 
     SX1276Init();
@@ -34,9 +33,10 @@ void *thread_lora(void *arg)
             SX1276GetRxPacket(buf, &len);
 
             if ((len < 20) && (buf[len-1] == check_sum(buf, len-1))) {
+                printf("lora len = %d \r\n", len);    
                 send(fd_tcp_cli, buf, len, 0);
             } else {
-                // log_write("lora err len = %d \r\n", len);
+                printf("lora err len = %d \r\n", len);
             }
             break;
         case RF_TX_DONE:
@@ -58,7 +58,7 @@ void *thread_tcp(void *arg)
     /* 设置端口和地址 */
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
-    server.sin_port = htons(54201);
+    server.sin_port = htons(54301);
 
     /* 建立socket */
     int fd_tcp_srv = socket(AF_INET, SOCK_STREAM, 0);
@@ -76,12 +76,14 @@ void *thread_tcp(void *arg)
     setsockopt(fd_tcp_cli, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                sizeof(struct timeval));
 
+    printf("client connect \n");
     while(1) {
         int len = recv(fd_tcp_cli, buf, sizeof(buf), 0);  //MSG_WAITALL
         if (len > 0) {
+            printf("tcp recv \r\n");
             /* 等待lora空闲 */
             while(SX1276GetRFState() != 0x2) {
-                usleep(200*1000);
+                usleep(20*1000);
             }
             /* 发送lora数据 */
             SX1276SetTxPacket(buf, len); 
@@ -90,13 +92,15 @@ void *thread_tcp(void *arg)
             usleep(100);
         } else {
             /* len = 0 表示连接断开 */
+            printf("client disconnect \n");
             break;
         }
     }
 
     close(fd_tcp_srv);
 
-    pthread_exit("tcp thread end");
+    // pthread_exit("tcp thread end");
+    exit(EXIT_FAILURE);
 }
 
 

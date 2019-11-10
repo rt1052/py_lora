@@ -1,6 +1,5 @@
 #include "main.h"
 #include "lora.h"
-#include "tcp.h"
 
 
 void handle_pipe(int sig)
@@ -8,7 +7,7 @@ void handle_pipe(int sig)
     //log_write("signal \r\n");
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
     int ch;
     int res;        
@@ -22,21 +21,7 @@ int main(int argc, char **argv)
     sa.sa_flags = 0;
     sigaction(SIGPIPE,&sa,NULL);
 
-    while ((ch = getopt(argc, argv, "s:h")) != -1) {
-        switch (ch) {
-            case 's':
-                // printf("The argument of -l is %s\n\n", optarg);
-                //sscanf(optarg, "%d", &min_sz);
-                break;
-            case 'h':
-            case '?':
-                printf("\r\nUsage: network [options] \r\n");
-                printf("    -h  this help \n\r");
-                printf("    -s  set minimum buf size \r\n");
-                printf("\r\n");
-                return -1;
-        }
-    } 
+    printf("lora driver \r\n");
 
     /* tcp thread */
     res = pthread_create(&tcp_thread, NULL, thread_tcp, NULL);
