@@ -13,3 +13,4 @@ class g_var():
 
 	polling_fd = 1
 	alarm_fd = 2
+	update_fd = 100

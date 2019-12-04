@@ -10,9 +10,7 @@
 #include <linux/spi/spidev.h>
 #include "platform.h"
 
-/***************************************************************************//**
- * @brief spi_init
-*******************************************************************************/
+
 int spi_init(uint8_t  clk_pha,
             uint8_t  clk_pol,
             uint32_t speed)
@@ -73,11 +71,6 @@ int spi_init(uint8_t  clk_pha,
     return fd;
 }
 
-
-
-/***************************************************************************//**
- * @brief spi_write_then_read
-*******************************************************************************/
 int spi_write_then_read(int fd,
         uint8_t *txbuf, uint16_t n_tx,
         uint8_t *rxbuf, uint16_t n_rx)
@@ -118,10 +111,6 @@ void spi_close(int fd)
     close(fd);
 }
 
-
-/***************************************************************************//**
- * @brief gpio_init
-*******************************************************************************/
 void gpio_init(uint32_t pin)
 {
     int fd, len;
@@ -143,9 +132,6 @@ void gpio_init(uint32_t pin)
     close(fd);
 }
 
-/***************************************************************************//**
- * @brief gpio_direction
-*******************************************************************************/
 void gpio_direction(uint16_t pin, uint8_t direction)
 {
     int fd;
@@ -172,9 +158,6 @@ void gpio_direction(uint16_t pin, uint8_t direction)
     close(fd);
 }
 
-/***************************************************************************//**
- * @brief gpio_set_value
-*******************************************************************************/
 void gpio_set_value(unsigned pin, int value)
 {
     int fd;
@@ -224,60 +207,4 @@ int gpio_get_value(unsigned pin)
     } else {
         return 0;
     }
-}
-
-void fpga_led(int value)
-{
-    int fd;
-    fd =  open("/sys/class/leds/d1/brightness", O_WRONLY);
-    if (fd < 0) {
-        printf("%s: Can't set led value\n\r", __func__);
-        return;
-    }
-
-    if (value) {
-        write(fd, "1", 2);
-    } else {
-        write(fd, "0", 2);
-    }
-
-    close(fd);
-}
-
-int fpga_init(void)
-{
-    int fd = spi_init(0, 1, 32000000);
-
-    gpio_init(GPIO_DONE);
-    gpio_init(GPIO_INIT);
-    gpio_init(GPIO_PROG);
-
-    gpio_direction(GPIO_DONE, 0);
-    gpio_direction(GPIO_INIT, 0);
-    gpio_direction(GPIO_PROG, 1);
-
-    return fd;
-}
-
-void fpga_close(int fd)
-{
-    spi_close(fd);
-}
-
-/******************************************************************************
-* delay() is a simple wait loop. It very roughly matches 1 us on a 75 MHz MB
-* system. Used to make sure PROGRAM_B is asserted long enough
-
-* @param count is the number of units of time (very roughly 1 us with a 75 MHz
-*   clock) to wait
-*
-* @return
-*   None
-*
-******************************************************************************/
-void delay(int count)
-{
-    int us_adjust = 500;
-    for(int i = 0; i < count * us_adjust ; i++)
-        ;
 }

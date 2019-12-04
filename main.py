@@ -4,6 +4,7 @@ from tcp import *
 from threading import *
 import logging
 import logging.handlers
+import struct
 
 
 # 本地调用
@@ -28,8 +29,71 @@ def thread_user():
         elif msg == "lsa":
             for i in g_var.alarm_arr:
                 print(i)
+        elif msg == "update":
+            # 更新设备固件线程
+            update_thread = Thread(target = thread_update)
+            update_thread.start()            
         else:
             print('unknow cmd')
+
+
+def thread_update():
+    # 保存新连接的信息
+    queue = Queue()
+    info = {}
+    info['fd'] = g_var.update_fd
+    info['host'] = "update"
+    info['queue'] = queue
+    g_var.cli_arr.append(info)
+
+    """
+    每2秒发送一次更新请求帧，直到有响应，
+    如果10秒内没有响应则退出
+    """
+    for i in range(0, 10):
+        lora_frame_create(g_var.update_fd, 1, "UPDATE START", None)
+        # 接收lora数据
+        try:
+            cnt = queue.get(timeout = 2)
+            if (cnt == 0):
+                break
+        except:
+            if (i > 5):
+                g_var.cli_arr.remove(info)
+                return            
+
+    # 读取bin文件
+    file = open("bin/lora.bin", "rb")
+    data = file.read()
+    data_len = len(data)
+    # 每次发送的数据长度
+    step = 100
+
+    """
+    根据终端返回的序号，把对应的数据发送给终端
+    """
+    while True:
+        try:
+            # 接收lora数据，超时则退出线程
+            cnt = queue.get(timeout = 10)
+            start = cnt * step
+            end = (cnt+1) * step
+            # 全部数据发送完毕则退出
+            if (start > data_len):
+                break
+            elif (end > data_len):
+                end = data_len            
+
+            buf = data[start:end]
+            arr = []
+            arr.append(cnt)
+            arr.extend(struct.unpack('B'*len(buf), buf))
+            lora_frame_create(g_var.update_fd, 1, "UPDATE DATA", arr)           
+        except:
+            break
+
+    file.close()    
+    g_var.cli_arr.remove(info)  
 
 
 # 每十分钟查询设备

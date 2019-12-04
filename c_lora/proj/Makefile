@@ -13,8 +13,8 @@ OBJ_USER = ${patsubst %.c,${OBJ_DIR}/%.o,$(notdir ${SRC_USER})}
 OBJ_LORA = ${patsubst %.c,${OBJ_DIR}/%.o,$(notdir ${SRC_LORA})}
 
 TARGET=${BIN_DIR}/lora
-# CC=gcc
-CC=arm-none-linux-gnueabi-gcc
+CC=gcc
+#CC=arm-none-linux-gnueabi-gcc
 CCFLAGS=-g -Wall ${INC_DIR} -std=gnu99
 
 ${TARGET}: ${OBJ_USER} ${OBJ_LORA}
