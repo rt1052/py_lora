@@ -86,7 +86,8 @@ def thread_update():
 
             buf = data[start:end]
             arr = []
-            arr.append(cnt)
+            arr.append(cnt % 256)
+            arr.append(cnt / 256)
             arr.extend(struct.unpack('B'*len(buf), buf))
             lora_frame_create(g_var.update_fd, 1, "UPDATE DATA", arr)           
         except:

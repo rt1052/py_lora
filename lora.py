@@ -24,7 +24,7 @@ def analyse_lora_frame(arr):
     # 如果是更新设备响应
     if cmd == 0x13:
         # 将序号发送给更新线程
-        cnt = arr[5]
+        cnt = arr[5] + arr[6] * 256
         send_to_client(fd, cnt)
     else:
         # 如果是传感器信息
@@ -78,6 +78,7 @@ def send_to_client(fd, buf):
     # fd=None表示向所有tcp客户端发送数据
     if fd == None:
         for i in g_var.cli_arr:
+            # 不需要发给更新线程
             if (i["fd"] < 100):
                 i["queue"].put(buf)
     else:
